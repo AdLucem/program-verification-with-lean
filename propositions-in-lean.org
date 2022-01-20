@@ -1,18 +1,5 @@
 #+TITLE: Propositional Logic in Lean
 
-Note: this is more of a coding blogpost than a full tutorial so far.
-
-Lean contains a base type, `Prop`
-
-#+BEGIN_SRC lean :tangle yes
-variables P Q R : Prop
-#+END_SRC
-
-Now, Lean- the base language- also contains a pretty extensive propositional logic library, but we will not be using that. Why? The reasoning is actually rather important.
-
-So far, you have learned about the language of discourse, the language of logic and the language of semantics. Like you did in your first homework, we want to build a system of logic, _using lean as the discourse language_ - we don't want to use constructors in lean itself as the language of logic. (Apart from one small thing- we'll be using lean's inbuilt `Prop` type). We're using lean- rather than something like python- because it's, well, a _stricter_ language of discourse than our natural language.
-
-Essentially, you'll be writing something of a library in lean for the first half of the course.
 
 * A Brief Look At Defining Enumerative Types
 
@@ -26,52 +13,212 @@ inductive PropBool : Type
   | p1 : PropBool
 #+END_SRC
 
+* The Prop Type
 
-* Propositional Logic Syntax in Lean - One Way
+Lean contains a base type, `Prop`
 
 #+BEGIN_SRC lean :tangle yes
-inductive Prp
-  | atom : Prp
-  | not (p : Prp) : Prp
-  | Λ (p : Prp) (q : Prp) : Prp
-  | V (p : Prp) (q : Prp) : Prp
+variables P Q R : Prop
 #+END_SRC
 
-* Propositional Logic Syntax in Lean- The Other Way
+`Prop` is a little like `int` or `bool` in C in that it's not really _defined_ - if you go look at the definitions in the [lean core file](https://github.com/leanprover/lean/blob/master/library/init/core.lean), you'll see it's defined as `notation Prop := Sort 0`. Which means- there's no type definition we can look at for `Prop`, it just... is. (Note that even natural numbers are defined in lean!)
+
+Basic operators over propositional logic are also defined in lean- which means, we can use the `check` command to find out if any given propositional logic expression is valid! 
+
+#+BEGIN_SRC lean :tangle yes
+#check P ∧ Q
+#check ¬ P ∨ Q
+#check ¬ P → Q ∧ R 
+#+END_SRC
+
+Note that there's no semantics involved at this stage- we're just checking well-formedness of expressions. In lecture 2, you saw your language of discourse, your language of propositional logic syntax, and your language of semantics- well, this is the second one.
+
+* Doing It Ourselves - Propositional Variables
+
+** Why Are We Doing It Ourselves?
+
+So far, you have learned about the language of discourse, the language of logic and the language of semantics. Like you did in your first homework, we want to build a system of logic, _using lean as the discourse language_ - we don't want to use constructors in lean itself as the language of logic. (Apart from one small thing- we'll be using lean's inbuilt `Prop` type). We're using lean- rather than something like python- because it's, well, a _stricter_ language of discourse than our natural language.
+
+So this and the next few lectures, we'll be recreating a bit of lean (literally recreating- you can see a lot of similar definitions in the lean core library, which is something I highly encourage you all to check out) for fun and profit. Specifically, propositional logic syntax and semantics. 
+
+** Propositional Variables
+
+We start our syntax with the rule for propositional variables. 
+
+p ∈ Var
+-------  VAR-INTRO
+p ∈ Exp
+
+We 'cheat' a bit here- we just define our variables as var1, var2... varN.
+ 
+#+BEGIN_SRC lean
+inductive var (i : ℕ) : Prop
+  | intro : ℕ -> var
+#+END_SRC
+
+Lean Syntax Time: `structure` is how one defines a type with only one constructor. It also allows us to define `projections` on the type- mappings from the type to some other space (for example, if we wanted to keep track of our variables by mapping them to natural numbers). So we can rewrite the earlier definition like so:
+
+[Lean Syntax time: since we don't want core library definitions to get in the way of us rewriting about a tenth of `core.lean`, we begin a hidden namespace- `namespace hidden` - here, that 'hides' us from the core library.]
+
+#+BEGIN_SRC lean :tangle yes
+namespace hidden
+ 
+structure var :=
+  mk :: (idx : ℕ) 
+
+def p1 := var.mk 1
+def p2 := var.mk 2
+
+#eval p1.idx
+#+END_SRC
+
+Exercise: can you define equality over propositional variables, using the above definition?
+
+*** Equality
+
+We define equality over natural numbers first- just for type convenience benefits (the lean equality function returns a `Prop`, which is correct but cannot be printed):
+
+#+BEGIN_SRC lean :tangle yes
+def neq : ℕ -> ℕ -> bool
+   | 0 0 := tt
+   | (n+1) 0 := ff
+   | 0 (n+1) := ff
+   | (n+1) (m+1) := neq n m
+#+END_SRC
+
+And using this defn, equality over variables:
+
+#+BEGIN_SRC lean :tangle yes
+def vareq (pA : var) (pB : var) : bool := neq pA.idx pB.idx
+
+#eval vareq p1 p2
+#eval vareq p2 p2 
+#+END_SRC
+* We Have Operators At Home
+
+Going back to lecture 1, we saw the following operators- along with the following annotations- in class. And if you did homework-1, you've implemented these.
+
+#+BEGIN_EXAMPLE
+AND : Exp, Exp -> Exp
+OR  : Exp, Exp -> Exp
+NOT : Exp -> Exp
+VAR : Var -> Exp
+IMP : Exp, Exp -> Exp 
+#+END_EXAMPLE
+
+Lean has inbuilt operators, but we can _also_ build our own operators as an exercise. In particular, we'd like to apply the rules we learnt in class to build our own operators.
+
+Consider the rule for `AND` that was given in the tutorial: 
+
+e1 Exp     e2 Exp
+------------------ AND-INTRO
+  e1 AND e2 Exp
+
+We can define `and` as a _type_ - a type that takes two things of type `Prop` as argument, and produces a thing of type `Prop` (confused? remember that types are also first-class objects that can be used as arguments, like values!)
 
 #+BEGIN_SRC lean
-namespace hidden
-
-constants P Q R : Prop
-
-inductive PropBool : Type
-  | p0 : PropBool
-  | p1 : PropBool
-
-
 inductive and (p q : Prop) : Prop
   | intro : p -> q -> and
+#+END_SRC
 
+the type `and` has one type constructor- corresponding with our one syntactic rule for the `AND` operator- and the rule is "if `p` and `q` are things of type `Prop` (our lean equivalent of `Exp`), then `p AND q` is also a thing of type `Prop`"
+
+Lean syntax time: we can convert the `and` type (since it has only one rule, we can use `and` itself as the name of the type constructor) into an infix operator:
+
+#+BEGIN_SRC lean
 infix `Λ` : 50 := and
+#+END_SRC
+ 
+So based on the other rules we wrote in lecture one, can we define the rest of the operators?
 
+** The Operators At Home
+
+#+BEGIN_SRC lean :tangle yes
+inductive and (p q : Prop) : Prop
+  | intro : p -> q -> and
+infix `Λ` : 50 := and
 
 inductive or (p q : Prop) : Prop
   | intro : p -> q -> or
-
 infix `V` : 51 := or
 
+inductive impl (p q : Prop) : Prop
+  | intro : p -> q -> impl
+infix `⇒` : 52 := impl
 
 inductive equiv (p q : Prop) : Prop
   | intro : p -> q -> equiv
-
-infix `≡` : 53 := equiv
-
+infix `<->` : 53 := equiv
 
 inductive not (p : Prop) : Prop
   | intro : p -> not
 
 #check P Λ Q
-#check P Λ Q V R
+#check P V Q <-> R
+#+END_SRC
+ 
+Once again, notice that I'm building these operators on a _purely syntactic_ level!
 
+
+* Interpretations
+
+Once we move into the semantic domain, we can _interpret_ each propositional logic variable as being either `0` or `1` (a boolean `true` or `false`.
+
+** Boolean Operators - But As Functions This Time
+
+We define the above functions in the _semantic domain_ - remember the difference between not and not-dot in lecture 2? That is also why we use _functions_ this time rather than types- these operators aren't constructing anything, they're giving us transformations on the input.
+
+#+BEGIN_SRC lean :tangle yes
+def bnot : bool -> bool
+  | tt := ff
+  | ff := tt
+
+def band : bool -> bool -> bool
+  | tt tt := tt
+  | _ _   := ff
+
+def bor : bool -> bool -> bool
+  | ff ff := ff
+  | _ _ := tt 
+#+END_SRC
+
+** How Do I Do The Interpretations?
+
+I do interpretations via another type- a type `interpretation` that maps a propositional variable to a boolean. 
+
+[Well, an interpretation is technically a set of such mappings... uh, I cheat a bit here with a list. Done properly, I would have defined equality over interpretations and then defined them as a set.]
+
+#+BEGIN_SRC lean :tangle yes
+structure interpretn :=
+  mk :: (k : var) (v : bool)
+
+def i1 := interpretn.mk p1 tt
+
+def i2 := interpretn.mk p2 ff
+
+def intps : Type := list interpretn
+
+def is := [i1, i2] 
+#check is
+#+END_SRC
+
+* Exercise: Define The Valuation Function and Logical Equivalence
+* Psst, End The Namespace
+
+#+BEGIN_SRC lean :tangle yes
 end hidden
 #+END_SRC
+* Testpad
+
+Putting some alternate test definitions here. These don't run. 
+
+** Propositional Logic Syntax in Lean - One Way
+
+#+BEGIN_SRC lean
+inductive Prp
+  | atom : nat -> Prp
+  | not (p : Prp) : Prp
+  | Λ (p : Prp) (q : Prp) : Prp
+  | V (p : Prp) (q : Prp) : Prp
+#+END_SRC
+
