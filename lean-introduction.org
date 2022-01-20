@@ -1,0 +1,187 @@
+#+TITLE: Introduction To Lean
+
+Logistical note: I'll be providing keybindings for every step to anyone using `lean-mode` on Emacs- but most of the commands here also have a VSCode `lean-mode` equivalent! You can find the similar keybindings for VSCode [here](https://leanprover.github.io/reference/using_lean.html#using-lean-with-vscode)
+
+References:
+- [Theorem Proving in Lean](https://leanprover.github.io/theorem_proving_in_lean/index.html)
+- [The Lean Reference Manual](https://leanprover.github.io/reference/index.html)
+- [Logic and Proof](https://leanprover.github.io/logic_and_proof/index.html)
+
+
+* A Working Introduction To Type Theory
+
+In learning propositional logic, you have come across _expressions_. An _expression_ is any valid statement in a given language- natural language, the language of propositional logic, the language of lambda calculus... or a programming language.
+
+In typed languages, every expression has an associated _type_.You've probably used several typed languages by this point- for example:
+
+#+BEGIN_SRC python
+def addStr(a : int, b : int):
+    return str(a + b) : str
+
+char* addStr(int a, int b);
+#+END_SRC
+
+This function `add` takes two arguments of type `int`, and returns an argument of type `str`. Python may be _dynamically typed_ - types are not declared and checked at compile time- but it's typed nonetheless.
+
+("Wait, aren't all languages typed?" No :P Racket is an example of an untyped language.)
+
+Lean is also a typed language, although one with a richer type system- i.e: _you can do more with the types in lean_. But first, let's see types in lean.
+
+#+BEGIN_SRC lean :tangle yes
+constant m : nat
+constant n : nat
+constants b1 b2 : bool
+#+END_SRC
+
+[Syntax] : `constant` is a _command_. These lines are _declarations_, like one would find in C. _nat_ and _bool_ are built-in types.
+[Syntax-Emacs] : press `Ctrl-c Ctrl-x` to compile.
+
+** Typechecking
+
+#+BEGIN_SRC lean :tangle yes
+#check 1
+#check m
+#check true
+#+END_SRC
+
+Note that `true` is of type `Prop` and not `Bool`!
+
+** Dependent Types
+
+(And here we might be jumping a little ahead of ourselves...)
+
+Fundamentally, lean is a dependently typed programming language. The _theorem prover_ bit comes because of the curry-howard correspondence- that programs (typed lambda calculi) are isomorphic to proofs (propositional logic formulas).
+
+So you have seen types- dependent types are types that include _values_. The classic example is- a `list [a]` is a type (a polymorphic type), a `vec [a] of length n` (`vec a n`)  is a dependent type because it depends on a non-type value `n`.
+
+{Although, if your language counts both types and values as atomic elements, the type `a : Type` is also a value that can be considered as a parameter. We can briefly see this by looking at the definition of vectors in lean- found [here](https://github.com/leanprover/lean/blob/master/library/data/vector.lean)
+
+#+BEGIN_SRC lean
+def vector (α : Type u) (n : ℕ)
+  := { l : list α // l.length = n }
+#+END_SRC
+
+Is this a function or a type? Well, yes! Because later in the library we can see functions using this type:
+
+#+BEGIN_SRC lean
+@[reducible] def length (v : vector α n) : ℕ := n
+
+def head : vector α (nat.succ n) → α
+| ⟨ [],    h ⟩ := by contradiction
+| ⟨ a :: v, h ⟩ := a
+#+END_SRC
+
+* More Lean Syntax
+
+** Variables
+
+Variables also exist in lean, and we can type-check the result of expressions involving variables.
+
+#+BEGIN_SRC lean :tangle yes
+variable x : N
+#check x + 1
+#+END_SRC
+
+** Functions, Function Types And A Little Functional Programming
+
+A function, like in other languages, takes arguments of type `a, b, ...` and returns an argument. We write the type of a function that takes two natural numbers and returns a natural number, as follows:
+
+#+BEGIN_SRC lean :tangle yes
+constant fType (p : nat) (q : nat) : nat
+#+END_SRC
+
+[note: introduce currying here, exercise]
+
+Defining a function with the above type (note that you DO NOT need to declare functions!):
+
+#+BEGIN_SRC lean :tangle yes
+def add (p : nat) (q : nat) : nat :=
+  p + q
+#+END_SRC
+
+Try checking the type of `f` now!
+
+We can _apply_ a function to a value, or values:
+
+#+BEGIN_SRC lean :tangle yes
+#eval add 1 2
+#+END_SRC
+
+We can also _reduce_ a function, although- without going into lambda calculus- reduction is different from evaluation. For one, we can _partially apply_ functions in reduction, and get another function. Run the following two commands:
+
+#+BEGIN_SRC lean :tangle yes
+#reduce add 1 2
+#reduce add 1
+#+END_SRC
+
+Fun times: you can make other functions out of partially applied functions! (Functional programmers in the class may recall the concept of _currying_ here)
+
+Exercise: write a function `increment` that takes uses partial application of the above `add` function.
+
+#+BEGIN_SRC lean :tangle yes
+def incr: nat -> nat :=
+  f 1
+#+END_SRC
+
+** Guards, Recursive Functions- And Here's Where The "Verifying Programs" Bit Comes In
+
+Try defining the factorial function. We'd define it in python like so:
+
+-- fact 0 = 1
+-- fact 1 = 1
+-- fact n = n * fact (n-1)
+
+#+BEGIN_SRC python
+def fact(n):
+    if n == 0:
+        return 0
+    elif n == 1:
+        return 1
+    else:
+        return n * fact(n-1)
+#+END_SRC
+
+This syntactic structure called a `guard` behaves like the `if` in Lean. So- assuming we've learned some new function syntax- we might try to define a `fact` function in lean like so:
+
+#+BEGIN_SRC lean
+def fact: ℕ -> ℕ
+  | 0 := 0
+  | 1 := 1
+  | x := x * fact (x-1)
+#+END_SRC
+
+Now try to compile this [Emacs reminder: `C-c C-x`].
+
+... ` failed to prove recursive application is decreasing` ? In fact, somewhere in your error message, the compiler will tell you precisely what you need to _prove_ in order for your recursive function to verifiably terminate:
+
+#+BEGIN_SRC
+default_dec_tac failed
+state:
+fact : ℕ → ℕ,
+x : ℕ
+⊢ x - 1 < x
+#+END_SRC
+
+Why? Because subtraction on natural numbers is defined like so in the [lean natural numbers library](https://leanprover-community.github.io/mathlib_docs/init/data/nat/basic.html)
+
+#+BEGIN_SRC
+def pred : ℕ → ℕ
+| 0     := 0
+| (a+1) := a
+
+protected def sub : ℕ → ℕ → ℕ
+| a 0     := a
+| a (b+1) := pred (sub a b)
+#+END_SRC
+
+*** Well-Formed Recursion
+
+But if we do well-formed recursion:
+
+#+BEGIN_SRC lean :tangle yes
+def fact : ℕ -> ℕ
+  | 0 := 1
+  | 1 := 1
+  | (x+1) := (x+1) * fact x
+#+END_SRC
+

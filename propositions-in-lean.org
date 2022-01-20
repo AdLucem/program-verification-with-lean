@@ -1,0 +1,77 @@
+#+TITLE: Propositional Logic in Lean
+
+Note: this is more of a coding blogpost than a full tutorial so far.
+
+Lean contains a base type, `Prop`
+
+#+BEGIN_SRC lean :tangle yes
+variables P Q R : Prop
+#+END_SRC
+
+Now, Lean- the base language- also contains a pretty extensive propositional logic library, but we will not be using that. Why? The reasoning is actually rather important.
+
+So far, you have learned about the language of discourse, the language of logic and the language of semantics. Like you did in your first homework, we want to build a system of logic, _using lean as the discourse language_ - we don't want to use constructors in lean itself as the language of logic. (Apart from one small thing- we'll be using lean's inbuilt `Prop` type). We're using lean- rather than something like python- because it's, well, a _stricter_ language of discourse than our natural language.
+
+Essentially, you'll be writing something of a library in lean for the first half of the course.
+
+* A Brief Look At Defining Enumerative Types
+
+We want to use `0 | 1`, rather than Lean's `bool`, for convenience.
+
+Lean defines enumerative types- types that are simply a set of objects {a, b, c...}- as a subset of inductive types. So we use the same command for those:
+
+#+BEGIN_SRC lean :tangle yes
+inductive PropBool : Type
+  | p0 : PropBool
+  | p1 : PropBool
+#+END_SRC
+
+
+* Propositional Logic Syntax in Lean - One Way
+
+#+BEGIN_SRC lean :tangle yes
+inductive Prp
+  | atom : Prp
+  | not (p : Prp) : Prp
+  | Λ (p : Prp) (q : Prp) : Prp
+  | V (p : Prp) (q : Prp) : Prp
+#+END_SRC
+
+* Propositional Logic Syntax in Lean- The Other Way
+
+#+BEGIN_SRC lean
+namespace hidden
+
+constants P Q R : Prop
+
+inductive PropBool : Type
+  | p0 : PropBool
+  | p1 : PropBool
+
+
+inductive and (p q : Prop) : Prop
+  | intro : p -> q -> and
+
+infix `Λ` : 50 := and
+
+
+inductive or (p q : Prop) : Prop
+  | intro : p -> q -> or
+
+infix `V` : 51 := or
+
+
+inductive equiv (p q : Prop) : Prop
+  | intro : p -> q -> equiv
+
+infix `≡` : 53 := equiv
+
+
+inductive not (p : Prop) : Prop
+  | intro : p -> not
+
+#check P Λ Q
+#check P Λ Q V R
+
+end hidden
+#+END_SRC
