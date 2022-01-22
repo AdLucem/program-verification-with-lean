@@ -84,6 +84,8 @@ variable x : N
 
 ** Functions, Function Types And A Little Functional Programming
 
+TODO: ADD CURRYING TO LECTURE NOTES
+
 A function, like in other languages, takes arguments of type `a, b, ...` and returns an argument. We write the type of a function that takes two natural numbers and returns a natural number, as follows:
 
 #+BEGIN_SRC lean :tangle yes
@@ -107,20 +109,45 @@ We can _apply_ a function to a value, or values:
 #eval add 1 2
 #+END_SRC
 
-We can also _reduce_ a function, although- without going into lambda calculus- reduction is different from evaluation. For one, we can _partially apply_ functions in reduction, and get another function. Run the following two commands:
+We can also _reduce_ a function, although- without going into lambda calculus- reduction is different from evaluation.
+
+** Partial Application And Currying
+
+We can _partially apply_ functions, and get another function. Run the following two commands:
 
 #+BEGIN_SRC lean :tangle yes
 #reduce add 1 2
 #reduce add 1
 #+END_SRC
 
-Fun times: you can make other functions out of partially applied functions! (Functional programmers in the class may recall the concept of _currying_ here)
+Wait, how does partial application work?
 
-Exercise: write a function `increment` that takes uses partial application of the above `add` function.
+Recall the type of the `add` function.
 
-#+BEGIN_SRC lean :tangle yes
-def incr: nat -> nat :=
-  f 1
+#+BEGIN_SRC lean
+constant addType (a : ℕ) (b : ℕ) : ℕ
+#+END_SRC
+
+This type roughly says that `add` is a function that maps from a domain ℕ x ℕ to a range  ℕ.
+
+But we can also write this type another way:
+
+#+BEGIN_SRC lean
+constant addTypeCurr : ℕ -> ℕ -> ℕ
+#+END_SRC
+
+Which says that `add`- this version of `add` - is a function that maps from a domain ℕ, to a range fN that denotes the set of _functions that map from domain ℕ to range ℕ_
+
+In other words, the 'curried' add function maps from the set of natural numbers _to a set of functions_
+
+So if you apply the `add` function with type `addTypeCurr` to only one argument - say `1`- you get: a function from ℕ to ℕ, that adds `1` to its argument. 
+
+Or to put it in code:
+
+#+BEGIN_SRC lean
+def add1 := add 1
+#eval add1 2
+-- answer: 3
 #+END_SRC
 
 ** Guards, Recursive Functions- And Here's Where The "Verifying Programs" Bit Comes In

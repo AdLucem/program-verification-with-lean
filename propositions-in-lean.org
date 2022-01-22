@@ -159,7 +159,6 @@ inductive not (p : Prop) : Prop
  
 Once again, notice that I'm building these operators on a _purely syntactic_ level!
 
-
 * Interpretations
 
 Once we move into the semantic domain, we can _interpret_ each propositional logic variable as being either `0` or `1` (a boolean `true` or `false`.
