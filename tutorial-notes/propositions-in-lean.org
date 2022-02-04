@@ -49,11 +49,11 @@ p ∈ Var
 -------  VAR-INTRO
 p ∈ Exp
 
-We 'cheat' a bit here- we just define our variables as var1, var2... varN.
+We just define our variables as var1, var2... varN- i.e: we index our variables with natural numbers.
  
 #+BEGIN_SRC lean
-inductive var (i : ℕ) : Prop
-  | intro : ℕ -> var
+inductive var :=
+  mk : ℕ -> var 
 #+END_SRC
 
 Lean Syntax Time: `structure` is how one defines a type with only one constructor. It also allows us to define `projections` on the type- mappings from the type to some other space (for example, if we wanted to keep track of our variables by mapping them to natural numbers). So we can rewrite the earlier definition like so:
@@ -66,10 +66,10 @@ namespace hidden
 structure var :=
   mk :: (idx : ℕ) 
 
-def p1 := var.mk 1
-def p2 := var.mk 2
+def v1 := var.mk 1
+def v2 := var.mk 2
 
-#eval p1.idx
+#eval v1.idx
 #+END_SRC
 
 Exercise: can you define equality over propositional variables, using the above definition?
@@ -94,6 +94,7 @@ def vareq (pA : var) (pB : var) : bool := neq pA.idx pB.idx
 #eval vareq p1 p2
 #eval vareq p2 p2 
 #+END_SRC
+
 * We Have Operators At Home
 
 Going back to lecture 1, we saw the following operators- along with the following annotations- in class. And if you did homework-1, you've implemented these.
@@ -207,17 +208,3 @@ def is := [i1, i2]
 #+BEGIN_SRC lean :tangle yes
 end hidden
 #+END_SRC
-* Testpad
-
-Putting some alternate test definitions here. These don't run. 
-
-** Propositional Logic Syntax in Lean - One Way
-
-#+BEGIN_SRC lean
-inductive Prp
-  | atom : nat -> Prp
-  | not (p : Prp) : Prp
-  | Λ (p : Prp) (q : Prp) : Prp
-  | V (p : Prp) (q : Prp) : Prp
-#+END_SRC
-
