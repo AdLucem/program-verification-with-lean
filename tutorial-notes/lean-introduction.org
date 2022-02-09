@@ -1,5 +1,9 @@
 #+TITLE: Introduction To Lean
 
+This is the start of a series of tutorials meant to introduce _complete functional programming newbies_ - people who have never touched a functional language or heard of the concept of functional programming before- to Lean, using it both (a) as a programming language and (b) as a theorem prover.
+
+These tutorial notes are meant as practical accompaniments to the course _Program Verification in Lean_, taught by Prof. Venkatesh Choppella at IIIT-H. 
+ 
 Logistical note: I'll be providing keybindings for every step to anyone using `lean-mode` on Emacs- but most of the commands here also have a VSCode `lean-mode` equivalent! You can find the similar keybindings for VSCode [here](https://leanprover.github.io/reference/using_lean.html#using-lean-with-vscode)
 
 References:

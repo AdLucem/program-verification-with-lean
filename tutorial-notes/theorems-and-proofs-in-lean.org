@@ -1,0 +1,41 @@
+#+TITLE: Theorems and Proofs With Lean
+
+In the last set of tutorial notes, we built propositional logic _in_ lean.
+
+But. Lean is basically "propositional logic: the language".
+
+Note: I'm basically replicating Chapter 3 of _Theorem Proving in Lean_ here.
+
+* Proofs of a Proposition
+
+#+BEGIN_SRC lean :tangle yes
+
+namespace hidden
+
+constant Proof : Prop -> Type
+
+constant and_comm : Π p q : Prop,
+Proof (implies (and p q) (and q p))
+
+variables p q : Prop
+#check and_comm p q
+
+end hidden
+
+#+END_SRC
+
+** modus ponens
+
+#+BEGIN_SRC lean :tangle yes
+
+constant modus_ponens :
+  Π p q : Prop, Proof (implies p q) →  Proof p → Proof q
+
+#+END_SRC
+
+** implication
+
+#+BEGIN_SRC lean :tangle yes
+constant implies_intro :
+  Π p q : Prop, (Proof p → Proof q) → Proof (implies p q).
+#+END_SRC

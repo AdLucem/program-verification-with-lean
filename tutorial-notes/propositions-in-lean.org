@@ -8,9 +8,11 @@ We want to use `0 | 1`, rather than Lean's `bool`, for convenience.
 Lean defines enumerative types- types that are simply a set of objects {a, b, c...}- as a subset of inductive types. So we use the same command for those:
 
 #+BEGIN_SRC lean :tangle yes
+
 inductive PropBool : Type
   | p0 : PropBool
   | p1 : PropBool
+
 #+END_SRC
 
 * The Prop Type
@@ -63,7 +65,7 @@ Lean Syntax Time: `structure` is how one defines a type with only one constructo
 #+BEGIN_SRC lean :tangle yes
 namespace hidden
  
-structure var :=
+structure var : Prop :=
   mk :: (idx : ℕ) 
 
 def v1 := var.mk 1
@@ -200,6 +202,20 @@ def intps : Type := list interpretn
 
 def is := [i1, i2] 
 #check is
+#+END_SRC
+
+* Exercise 
+
+To explain type `levels`: 
+
+#+BEGIN_SRC lean
+-- Exercise: why does this not work:
+-- structure var : Prop :=
+--  mk :: (idx : ℕ) 
+
+-- But this does? : 
+-- structure var : Type :=
+-- mk :: (idx : ℕ) 
 #+END_SRC
 
 * Exercise: Define The Valuation Function and Logical Equivalence
