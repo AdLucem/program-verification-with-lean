@@ -1,17 +1,21 @@
-namespace hidden
+variables P Q R : Prop
+variable h : P ∧ Q
 
-constant Proof : Prop -> Type
+#check h
+#check and.left h
+#check and.right h
 
-constant and_comm : Π p q : Prop,
-Proof (implies (and p q) (and q p))
+variable hp : P
+variable hq : Q
+#check and.intro hp hq  
 
-variables p q : Prop
-#check and_comm p q
+theorem andComm (A B : Prop) : A ∧ B → B ∧ A := 
+  assume h : A ∧ B,
+  and.intro (and.right h) (and.left h)
 
-constant modus_ponens :
-  Π p q : Prop, Proof (implies p q) →  Proof p → Proof q
+A ∨ B → B ∨ A
+A ∧ (B ∨ C) → (A ∧ B) ∨ (A ∧ C)
 
-constant implies_intro :
-  Π p q : Prop, (Proof p → Proof q) → Proof (implies p q).
-
-end hidden
+DeMorgan's laws:
+¬ (P ∨ Q) ↔ ¬P ∧ ¬Q
+¬ (P ∧ Q) ↔ ¬P ∨ ¬Q

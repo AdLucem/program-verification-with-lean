@@ -4,38 +4,87 @@ In the last set of tutorial notes, we built propositional logic _in_ lean.
 
 But. Lean is basically "propositional logic: the language".
 
-Note: I'm basically replicating Chapter 3 of _Theorem Proving in Lean_ here.
+Note: I'm following chapter 4 of [Logic and Proof](https://leanprover.github.io/logic_and_proof/propositional_logic_in_lean.html) here.
 
-* Proofs of a Proposition
+* A Proposition and A Proof
 
-#+BEGIN_SRC lean :tangle yes
+#+BEGIN_SRC 
 
-namespace hidden
+variables P Q R: Prop
+variable h : P ∧ ¬Q
 
-constant Proof : Prop -> Type
-
-constant and_comm : Π p q : Prop,
-Proof (implies (and p q) (and q p))
-
-variables p q : Prop
-#check and_comm p q
-
-end hidden
-
+#check P
+>> P : Prop
+#check h
+>> h : P ∧ ¬Q
 #+END_SRC
 
-** modus ponens
+`P` is a proposition. `h` is the proof that that proposition is true. *Note what is the type of h!*
 
-#+BEGIN_SRC lean :tangle yes
+** Theorems Are Function Types
 
-constant modus_ponens :
-  Π p q : Prop, Proof (implies p q) →  Proof p → Proof q
-
+#+BEGIN_SRC
+theorem andComm (A B : Prop) : A ∧ B → B ∧ A := _ 
 #+END_SRC
 
-** implication
+The `_` is a placeholder.
+
+* A Proof Is A Function Of The Given Theorem (Function Type) 
+
+Going back to `core.lean` and taking a look at our type constructor for `and` :
+
+#+BEGIN_SRC lean
+structure and (a b : Prop) : Prop :=
+intro :: (left : a) (right : b)
+
+variables P Q R : Prop
+variable h : P ∧ Q
+
+#check h
+#check and.left h
+#check and.right h
+#+END_SRC
+
+Exercise to do here: construct a natural deduction proof for `A ∧ B → B ∧ A`.
+
+Right, now we'll translate that proof into lean.
+
+#+BEGIN_SRC lean 
+variable hp : P
+variable hq : Q
+#check and.intro hp hq  
+
+>> ⟨hp, hq⟩ : P ∧ Q
+#+END_SRC
+
+Okay so now we have `P ∧ Q` (`and.intro hp hq`), `P` (`hp`) and `Q` (`hq`). To finish off the proof, we need a function that gives us `Q ∧ P`.
+
+#+BEGIN_SRC lean
+#check and.intro hp hq
+#+END_SRC
+
+Putting it all together into a proof:
 
 #+BEGIN_SRC lean :tangle yes
-constant implies_intro :
-  Π p q : Prop, (Proof p → Proof q) → Proof (implies p q).
+theorem andComm (A B : Prop) : A ∧ B → B ∧ A := 
+  assume h : A ∧ B, and.intro (and.right h) (and.left h)
 #+END_SRC
+
+** Syntactic Equivalents That Look Better
+
+#+BEGIN_SRC lean :tangle yes
+theorem andComm (A B : Prop) : A ∧ B → B ∧ A := 
+  assume h : A ∧ B,
+  show B ∧ A,
+  from and.intro (and.right h) (and.left h)
+#+END_SRC
+
+* Exercise: Do The Above For
+
+A ∨ B → B ∨ A
+A ∧ (B ∨ C) → (A ∧ B) ∨ (A ∧ C)
+
+DeMorgan's laws:
+¬ (P ∨ Q) ↔ ¬P ∧ ¬Q
+¬ (P ∧ Q) ↔ ¬P ∨ ¬Q
+
