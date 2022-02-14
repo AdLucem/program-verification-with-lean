@@ -82,9 +82,12 @@ theorem andComm (A B : Prop) : A ∧ B → B ∧ A :=
 * Exercise: Do The Above For
 
 A ∨ B → B ∨ A
+
 A ∧ (B ∨ C) → (A ∧ B) ∨ (A ∧ C)
 
 DeMorgan's laws:
+
 ¬ (P ∨ Q) ↔ ¬P ∧ ¬Q
+
 ¬ (P ∧ Q) ↔ ¬P ∨ ¬Q
 
