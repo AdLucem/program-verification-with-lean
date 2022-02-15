@@ -79,15 +79,208 @@ theorem andComm (A B : Prop) : A ∧ B → B ∧ A :=
   from and.intro (and.right h) (and.left h)
 #+END_SRC
 
-* Exercise: Do The Above For
+* Exercise 1: Do The Above For
 
 A ∨ B → B ∨ A
-
 A ∧ (B ∨ C) → (A ∧ B) ∨ (A ∧ C)
 
 DeMorgan's laws:
 
 ¬ (P ∨ Q) ↔ ¬P ∧ ¬Q
-
 ¬ (P ∧ Q) ↔ ¬P ∨ ¬Q
 
+* Reference: Natural Deduction Rules in Lean
+
+The lean core library has natural deduction rules corresponding to the rules we did in class.
+
+** atomics 
+
+*** true
+
+#+BEGIN_SRC lean
+inductive true : Prop
+| intro : true
+
+def trivial : true := ⟨⟩
+#+END_SRC
+
+The proposition `true` is, well, trivially proved.
+
+#+BEGIN_SRC lean
+theorem trivially_true : true := trivial
+#+END_SRC
+
+Note that you can also write a theorem without a name like so- suppose you want to prove some example proposition:
+
+#+BEGIN_SRC lean
+example : true := trivial
+#+END_SRC
+
+*** false
+
+#+BEGIN_SRC lean
+inductive false : Prop
+
+def false.elim {C : Sort u} (h : false) : C :=
+   false.rec C h
+#+END_SRC
+
+Note that `false` is an empty type i.e: a type with no members or constructors.
+
+To prove a proposition false means to prove the proposition `P -> false`. So you have the function `false.elim` :
+
+#+BEGIN_SRC lean
+#check false.elim
+>> false.elim : false → ?M_1
+#+END_SRC
+
+So you can "prove a false proposition"- an absurdity- like so:
+
+Rule false-elim:
+
+------
+ _|_ 
+  
+#+BEGIN_SRC lean
+variable h : false
+
+example : A := false.elim h
+#+END_SRC
+
+** not
+
+#+BEGIN_SRC lean
+def not (a : Prop) := a → false
+#+END_SRC
+
+#+BEGIN_QUOTE
+Internally, negation ¬ A is defined by A → false, which you can think of as saying that A implies something impossible. The rules for negation are therefore similar to the rules for implication. To prove ¬ A, assume A and derive a contradiction.
+#+END_QUOTE
+
+** conjunction
+
+#+BEGIN_SRC lean
+structure and (a b : Prop) : Prop :=
+intro :: (left : a) (right : b)
+
+def and.elim_left {a b : Prop} (h : and a b) : a := h.1
+def and.elim_right {a b : Prop} (h : and a b) : b := h.2
+#+END_SRC
+
+** disjunction
+
+#+BEGIN_SRC lean
+inductive or (a b : Prop) : Prop
+| inl {} (h : a) : or
+| inr {} (h : b) : or
+
+def or.intro_left {a : Prop} (b : Prop) (ha : a) : or a b :=
+or.inl ha
+
+def or.intro_right (a : Prop) {b : Prop} (hb : b) : or a b :=
+or.inr hb
+#+END_SRC
+
+** implication
+
+#+BEGIN_SRC lean
+def implies (a b : Prop) := a → b
+#+END_SRC
+
+An implication- _A implies B_ - is written as a function type `A -> B`. 
+
+The rule IMPLICATION-ELIMINATION :
+
+A -> B     A
+------------
+     B
+
+is implemented as function application.
+
+#+BEGIN_SRC lean
+variable h1 : A -> B
+variable h2 : A
+
+#check h1 h2 
+>> B
+#+END_SRC
+
+** iff/bi-implication
+
+[quoted from Logic and Proof, Chapter 4]
+
+#+BEGIN_SRC lean
+structure iff (a b : Prop) : Prop :=
+   intro :: (mp : a → b) (mpr : b → a)
+
+notation a <-> b := iff a b
+notation a ↔ b := iff a b
+
+lemma iff.elim : ((a → b) → (b → a) → c) → (a ↔ b) → c := iff.rec
+
+lemma iff.elim_left : (a ↔ b) → a → b := iff.mp
+
+lemma iff.elim_right : (a ↔ b) → b → a := iff.mpr
+#+END_SRC
+
+The introduction rule for “if and only if” is iff.intro.
+
+#+BEGIN_SRC lean
+#check iff.intro
+>> iff.intro : (?M_1 → ?M_2) → (?M_2 → ?M_1) → (?M_1 ↔ ?M_2) 
+
+example : A ↔ B :=
+  iff.intro
+    (assume h : A, show B, from sorry)
+    (assume h : B, show A, from sorry)
+#+END_SRC
+
+The elimination rules are iff.elim_left and iff.elim_right:
+
+#+BEGIN_SRC lean
+#check iff.elim_left
+>> iff.elim_left : (?M_1 ↔ ?M_2) → ?M_1 → ?M_2
+
+variable h1 : A ↔ B
+variable h2 : A
+example : B := iff.elim_left h1 h2
+#+END_SRC
+
+#+BEGIN_SRC lean
+#check iff.elim_right
+>> iff.elim_right : (?M_1 ↔ ?M_2) → ?M_2 → ?M_1
+
+variable h1 : A ↔ B
+variable h2 : B
+example : A := iff.elim_right h1 h2
+#+END_SRC
+
+* Classical Logic Has Joined The Chat
+
+** Reducio Ad Absurdum (Proof By Contradiction)
+
+Proof by contradiction is implemented as a theorem in `classical.lean`. For simplicity, I'm leaving out the proof here and just showing the theorem definition:
+
+#+BEGIN_SRC lean
+theorem by_contradiction {p : Prop} (h : ¬p → false) : p
+#+END_SRC
+
+A proof by contradiction of `A` is a proof of `false` by `not A`. i.e : `proof_by_contradiction A : not A -> False`.
+
+We can construct an understandable version of this proof here:
+(note: we open the `classical` namespace to let lean allow classical reasoning)
+
+#+BEGIN_SRC lean
+open classical
+
+example : A :=
+  by_contradiction
+    (assume h : ¬ A,
+      show false, from sorry)
+#+END_SRC
+
+* Exercise 2
+
+The statement below was in your quiz-1. Prove it again, but this time in lean:
+
+((p → q) ∧ (¬r → ¬q)) → (p → r)

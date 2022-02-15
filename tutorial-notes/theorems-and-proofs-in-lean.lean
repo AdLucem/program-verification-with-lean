@@ -1,21 +1,11 @@
-variables P Q R : Prop
-variable h : P ∧ Q
+open classical
 
-#check h
-#check and.left h
-#check and.right h
+variable A : Prop
+constant proofby_contradiction : ¬A → false
 
-variable hp : P
-variable hq : Q
-#check and.intro hp hq  
+example : A :=
+by_contradiction
+(assume h : ¬ A,
+show false, from sorry)
 
-theorem andComm (A B : Prop) : A ∧ B → B ∧ A := 
-  assume h : A ∧ B,
-  and.intro (and.right h) (and.left h)
-
-A ∨ B → B ∨ A
-A ∧ (B ∨ C) → (A ∧ B) ∨ (A ∧ C)
-
-DeMorgan's laws:
-¬ (P ∨ Q) ↔ ¬P ∧ ¬Q
-¬ (P ∧ Q) ↔ ¬P ∨ ¬Q
+((p → q) ∧ (¬r → ¬q)) → (p → r)
